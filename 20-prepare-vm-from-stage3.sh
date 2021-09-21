@@ -87,7 +87,7 @@ sleep 1
 
 fdisk /dev/nbd0 -l
 parted --script --align optimal /dev/nbd0 mklabel msdos -- mkpart primary xfs 1 -0
-mkfs.xfs -L pktester /dev/nbd0p1
+mkfs.xfs -L pkgtester /dev/nbd0p1
 
 
 mount /dev/nbd0p1 /mnt/new/

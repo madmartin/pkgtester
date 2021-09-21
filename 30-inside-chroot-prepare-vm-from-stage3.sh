@@ -65,7 +65,7 @@ EOF
 
 # populate fstab
 cat >>/etc/fstab <<EOF
-LABEL=pktester / xfs noatime 0 1
+LABEL=pkgtester / xfs noatime 0 1
 
 192.168.122.1:/data/virt/package-tester/work /root/work nfs defaults 0 0
 192.168.122.1:/data/virt/package-tester/distfiles /var/cache/distfiles nfs defaults 0 0
@@ -126,7 +126,7 @@ sys-firmware/tt-s2-6400-firmware ~amd64
 media-tv/v4l-dvb-saa716x ~amd64
 EOF
 
-# npw adjust ARCH in case it is not ~amd64
+# now adjust ARCH in case it is not ~amd64
 if [ "$ARCH" != "amd64" ]
 then
 	sed -i "s/amd64/$ARCH/" /etc/portage/package.accept_keywords
