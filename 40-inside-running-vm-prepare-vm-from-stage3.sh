@@ -19,19 +19,48 @@ else
 	exit 1
 fi
 
+# source the config file
+DIR=$(dirname $0); [ -e "$DIR/00-config.sh" ] && source "$DIR/00-config.sh"
+
+# determine $Arch and $Variant from filename
+STAGE3=$(ls stage3-*.tar.*)
+Arch=$(echo "$STAGE3" | cut -d"-" -f2)
+Variant=$(echo "$STAGE3" | cut -d"-" -f3- | rev | cut -d"-" -f2- | rev)
+echo "Arch: $Arch - Variant $Variant"
+
 set -e -x -v
 
-ARCH=$(eselect profile list | head -n 2 | awk --field-separator "/" '/default/ { print $3; }')
+INIT=unknown
 
-# configure hostname
-hostnamectl set-hostname "pkgtester-$ARCH"
+# check for systemd/openrc
+if which systemctl >/dev/null 2>&1
+then
+	INIT=systemd
+fi
+if which openrc >/dev/null 2>&1
+then
+	INIT=openrc
+fi
 
-# configure keyboard layout
-localectl set-keymap de-latin1-nodeadkeys
+case $INIT in
+	systemd)
+		# configure hostname
+		hostnamectl set-hostname "pkgtester-$Arch"
 
-# configure timezone
-timedatectl set-timezone Europe/Berlin
+		# configure keyboard layout
+		localectl set-keymap de-latin1-nodeadkeys
 
-# create machine id, VERY important for networking
-systemd-machine-id-setup
+		# configure timezone
+		timedatectl set-timezone Europe/Berlin
+
+		# create machine id, VERY important for networking
+		systemd-machine-id-setup
+		;;
+	openrc)
+		echo "FIXME"
+		;;
+	*)
+		echo "unknonw init system, do nothing"
+		;;
+esac
 

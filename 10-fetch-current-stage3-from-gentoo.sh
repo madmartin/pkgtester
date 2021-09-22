@@ -2,7 +2,6 @@
 #
 # download latest x86 & amd64 stage3 image
 
-
 pause() {
 	local Answer=""
 	echo "Pause."
@@ -10,6 +9,11 @@ pause() {
 	read Answer
 }
 
+prepare_directories() {
+	[ -e "$DIR_NFS_SHARES/distfiles" ] || mkdir "$DIR_NFS_SHARES/distfiles"
+	[ -e "$DIR_NFS_SHARES/work" ] || mkdir "$DIR_NFS_SHARES/work"
+	[ -e "$DIR_NFS_SHARES/binpkgs-$1-$2" ] || mkdir "$DIR_NFS_SHARES/binpkgs-$1-$2"
+}
 
 download_variant() {
 	local Arch=$1
@@ -20,22 +24,25 @@ download_variant() {
 		*)	FArch=$Arch;;
 	esac
 
-	#FILE_amd64=$(curl -L  https://bouncer.gentoo.org/fetch/root/all/releases/amd64/autobuilds/latest-stage3-amd64-systemd.txt | sed '/^#/d' | cut -f1 -d" " )
-	#FILE_amd64_musl=$(curl -L  https://bouncer.gentoo.org/fetch/root/all/releases/amd64/autobuilds/latest-stage3-amd64-musl.txt | sed '/^#/d' | cut -f1 -d" " )
-	#FILE_x86=$(curl -L  https://bouncer.gentoo.org/fetch/root/all/releases/x86/autobuilds/latest-stage3-i686-systemd.txt | sed '/^#/d' | cut -f1 -d" " )
-	#echo "x86:        https://bouncer.gentoo.org/fetch/root/all/releases/x86/autobuilds/$FILE_x86"
-	#echo "amd64:      https://bouncer.gentoo.org/fetch/root/all/releases/amd64/autobuilds/$FILE_amd64"
-	#echo "amd64-musl: https://bouncer.gentoo.org/fetch/root/all/releases/amd64/autobuilds/$FILE_amd64_musl"
+	# example URLs
+	# https://bouncer.gentoo.org/fetch/root/all/releases/amd64/autobuilds/latest-stage3-amd64-systemd.txt
+	# https://bouncer.gentoo.org/fetch/root/all/releases/amd64/autobuilds/20210919T170549Z/stage3-amd64-openrc-20210919T170549Z.tar.xz
 
-	FILE=$(curl -L  https://bouncer.gentoo.org/fetch/root/all/releases/$Arch/autobuilds/latest-stage3-$FArch-$Variant.txt | sed '/^#/d' | cut -f1 -d" " )
+	# determine the exact filename of the download archive behind "latest-XXXX"
+	FILE=$(curl --location "https://bouncer.gentoo.org/fetch/root/all/releases/$Arch/autobuilds/latest-stage3-$FArch-$Variant.txt" | sed '/^#/d' | cut -f1 -d" " )
 	FILEPATH="https://bouncer.gentoo.org/fetch/root/all/releases/$Arch/autobuilds/$FILE"
 
 	echo "Download URL: $FILEPATH"
 	pause
-	curl -LO -C - "$FILEPATH" && echo "Download successful."
+	curl --remote-name --location --continue-at - "$FILEPATH" && echo "Download successful."
 	echo
+	prepare_directories $Arch $Variant
 }
 
+LANG=C
+# source the config file
+DIR=$(dirname $0); [ -e "$DIR/00-config.sh" ] && source "$DIR/00-config.sh"
+cd $DIR_BASE
 
 echo "download latest gentoo stage3 images"
 echo "===================================="
