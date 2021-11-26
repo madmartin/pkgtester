@@ -40,7 +40,16 @@ eselect locale set de_DE.utf8
 . /etc/profile
 
 # set a root password
-echo "root:root123.." | chpasswd
+echo "root:admin123.." | chpasswd
+if [ $? -ne 0 ]; then
+	echo
+	echo "##########################################"
+	echo "# The password could not be set!         #"
+	echo "# Before leaving the chroot environment, #"
+	echo "# set a password manually!!!!            #"
+	echo "##########################################"
+	sleep 5
+fi
 
 # configure ssh daemon to allow root login with password
 echo "PermitRootLogin yes" >>/etc/ssh/sshd_config
