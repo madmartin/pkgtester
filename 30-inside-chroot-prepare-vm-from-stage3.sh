@@ -138,7 +138,11 @@ case $INIT in
 esac
 
 # set unstable keywords for packages I work with, ~amd64
-cat >/etc/portage/package.accept_keywords <<EOF
+# some stage3 images have an existing directory .../package.accept_keywords
+if [ ! -e /etc/portage/package.accept_keywords ]; then
+	mkdir -p /etc/portage/package.accept_keywords
+fi
+cat >/etc/portage/package.accept_keywords/mykeywords <<EOF
 dev-embedded/esptool ~amd64
 media-tv/oscam ~amd64
 sys-fs/btrfsmaintenance ~amd64
