@@ -142,7 +142,15 @@ cp /root/.aliases root/.aliases
 
 popd
 
+echo
+echo "copy scripts into image"
 cp 00-config.sh ??-inside-*-prepare-vm-from-stage3.sh "$DIR_IMAGE_MOUNT"
+
+if [ -e patches ]; then
+	echo "directory \"patches\" exists, copy patches to /etc/portage"
+	cp -rp patches/ "$DIR_IMAGE_MOUNT"/etc/portage/
+fi
+
 set +x +v +e
 
 echo "do CHROOT, your next step is: run the script /30-inside-chroot-prepare-vm-from-stage3.sh now!"
