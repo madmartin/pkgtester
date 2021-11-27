@@ -134,7 +134,7 @@ mount -o bind /proc/ proc/
 
 # mount distfiles + binpkgs-filesystems
 mount -o bind "$DIR_NFS_SHARES"/distfiles var/cache/distfiles
-mount -o bind "$DIR_NFS_SHARES"/binpkgs-$Arch var/cache/binpkgs
+mount -o bind "$DIR_NFS_SHARES"/binpkgs-$Arch-$Variant var/cache/binpkgs
 
 cp /etc/locale.gen  etc/locale.gen
 cp /etc/resolv.conf etc/resolv.conf

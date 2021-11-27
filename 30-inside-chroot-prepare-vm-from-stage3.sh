@@ -97,7 +97,7 @@ LABEL=pkgtester / xfs noatime 0 1
 
 $NFS_SERVER:$DIR_NFS_SHARES/work /root/work nfs defaults 0 0
 $NFS_SERVER:$DIR_NFS_SHARES/distfiles /var/cache/distfiles nfs defaults 0 0
-$NFS_SERVER:$DIR_NFS_SHARES/binpkgs-$Arch /var/cache/binpkgs nfs defaults 0 0
+$NFS_SERVER:$DIR_NFS_SHARES/binpkgs-$Arch-$Variant /var/cache/binpkgs nfs defaults 0 0
 EOF
 
 # add additional fstab lines from configuration
