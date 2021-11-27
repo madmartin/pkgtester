@@ -100,6 +100,12 @@ $NFS_SERVER:$DIR_NFS_SHARES/distfiles /var/cache/distfiles nfs defaults 0 0
 $NFS_SERVER:$DIR_NFS_SHARES/binpkgs-$Arch-$Variant /var/cache/binpkgs nfs defaults 0 0
 EOF
 
+# portage tree
+if [ "$REPO_SQUASHFS" = "yes" ]; then
+	echo "/var/db/repos/gentoo.sq /var/db/repos/gentoo squashfs defaults 0 0" >>/etc/fstab
+	mount /var/db/repos/gentoo
+fi
+
 # add additional fstab lines from configuration
 printf "%s\n" "${FSTAB_ADDON_LINES[@]}" >>/etc/fstab
 

@@ -86,6 +86,9 @@ function cleanup() {
 	echo "umount disks, release qcow2 image"
 	cd "$DIR_IMAGE_MOUNT"
 	umount dev/ sys/ proc/ var/cache/distfiles var/cache/binpkgs
+	if [ "$REPO_SQUASHFS" = "yes" ]; then
+		umount var/db/repos/gentoo
+	fi
 	cd ..
 	umount "$DIR_IMAGE_MOUNT"
 	sleep 1
@@ -125,7 +128,12 @@ mkdir -p ./root/work
 touch "$STAGE3"
 
 # portage tree
-rsync -a --progress /usr/portage/ var/db/repos/gentoo
+if [ "$REPO_SQUASHFS" = "yes" ]; then
+	mksquashfs /usr/portage/ var/db/repos/gentoo.sq -info -progress
+	mkdir -p var/db/repos/gentoo
+else
+	rsync -a --progress /usr/portage/ var/db/repos/gentoo
+fi
 
 # mount pseude-filesystems
 mount -o bind /dev/ dev/

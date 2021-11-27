@@ -51,9 +51,12 @@ DISK_SIZE=20G
 # which locale should be set in the virtual machine
 VM_LOCALE="de_DE.utf8"
 
-# @VARIABLE: 
+# @VARIABLE: REPO_SQUASHFS
 # @DESCRIPTION:
-# 
+# Wnen set to yes, the portage tree will be put as squashfs image into the disk image
+# (and then mounted r/o)
+# In all other cases, the portage tree will be copied
+REPO_SQUASHFS="yes"
 
 # @VARIABLE: 
 # @DESCRIPTION:
