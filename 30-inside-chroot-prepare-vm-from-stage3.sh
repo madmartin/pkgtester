@@ -109,14 +109,20 @@ do
 	mkdir -p "$D"
 done
 
-# install sys-kernel/gentoo-kernel-bin
-emerge --ask --verbose --buildpkg=y --usepkg sys-kernel/gentoo-kernel-bin sys-boot/grub net-fs/nfs-utils
+# install sys-kernel/gentoo-kernel-bin and others
+PACKAGE_LIST="sys-kernel/gentoo-kernel-bin sys-boot/grub net-fs/nfs-utils"
+if [ "$INIT" = "openrc" ]; then
+	PACKAGE_LIST+=" net-misc/dhcpcd"
+fi
+emerge --ask --verbose --buildpkg=y --usepkg $PACKAGE_LIST
+
 # grub-install --target=i386-pc --boot-directory=./boot/ /dev/nbd0
 grub-install --target=i386-pc /dev/nbd0
 grub-mkconfig -o /boot/grub/grub.cfg
 
 case $INIT in
 	systemd)
+		echo "Found systemd, configure services"
 		# systemd: configure network
 		systemctl enable systemd-networkd
 		systemctl enable sshd
@@ -130,7 +136,14 @@ case $INIT in
 		EOF
 		;;
 	openrc)
-		echo "FIXME"
+		echo "Found openrc init system, add services"
+		rc-update add sshd
+		cd /etc/init.d/
+		ln -s net.lo net.enp1s0
+		rc-update add net.enp1s0
+		# insert some startup depency quirks
+		echo 'rc_need="!rpc.idmapd"' >>/etc/conf.d/nfsclient
+		echo 'rc_need=localmount' >>/etc/conf.d/sshd
 		;;
 	*)
 		echo "unknonw init system, do nothing"
@@ -195,7 +208,10 @@ set +x +v
 
 echo
 echo
-echo "now leave CHROOT,"
+echo "Setup of VM in chroot environment finished."
+echo "==========================================="
+echo "Whats next? - YOU do:"
+echo "exit from this CHROOT (type \"exit\"),"
 echo "boot virtual machine, then after first login execute"
 echo "  /40-inside-running-vm-prepare-vm-from-stage3.sh"
 echo
