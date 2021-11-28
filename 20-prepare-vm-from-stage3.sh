@@ -9,6 +9,16 @@ pause() {
 	read Answer
 }
 
+# check if a binary (executable) exists. if not, terminate
+check_executable() {
+	which $1 >/dev/null 2>&1
+	if [ $? -ne 0 ]
+	then
+		echo "The executable \"$1\" cannot be found. Exit."
+		exit 100
+	fi
+}
+
 # source the config file
 DIR=$(dirname $0); [ -e "$DIR/00-config.sh" ] && source "$DIR/00-config.sh"
 cd $DIR_BASE
@@ -44,6 +54,14 @@ if [ -e $DISK_NAME ]; then
 	exit 1
 fi
 
+# check if necessary programs exist
+check_executable qemu-img
+check_executable qemu-nbd
+check_executable parted
+check_executable mkfs.xfs
+check_executable tar
+
+# create an empty image
 qemu-img create -f qcow2 "$DISK_NAME" "$DISK_SIZE"
 
 set -x -v -e
@@ -117,9 +135,7 @@ pause
 pushd $DIR_IMAGE_MOUNT
 
 # extract the stage3 archive
-#tar xvf "$STAGE3"
-# root #tar xpvf stage3-*.tar.xz --xattrs-include='*.*' --numeric-owner
-tar xpvf "$FULL_STAGE3" --xattrs-include='*.*' --numeric-owner
+tar xpf "$FULL_STAGE3" --xattrs-include='*.*' --numeric-owner --checkpoint=2000
 
 # create mountpoints
 mkdir -p ./root/work
@@ -129,9 +145,11 @@ touch "$STAGE3"
 
 # portage tree
 if [ "$REPO_SQUASHFS" = "yes" ]; then
-	mksquashfs /usr/portage/ var/db/repos/gentoo.sq -info -progress
+	check_executable mksquashfs
+	mksquashfs /usr/portage/ var/db/repos/gentoo.sq
 	mkdir -p var/db/repos/gentoo
 else
+	check_executable rsync
 	rsync -a --progress /usr/portage/ var/db/repos/gentoo
 fi
 
