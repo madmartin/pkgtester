@@ -29,6 +29,14 @@ download_variant() {
 	# https://bouncer.gentoo.org/fetch/root/all/releases/amd64/autobuilds/20210919T170549Z/stage3-amd64-openrc-20210919T170549Z.tar.xz
 
 	# determine the exact filename of the download archive behind "latest-XXXX"
+	# first, check if the composed download url exists
+	HTTPCODE=$(curl --silent --output /dev/null --write-out "%{http_code}" --location "https://bouncer.gentoo.org/fetch/root/all/releases/$Arch/autobuilds/latest-stage3-$FArch-$Variant.txt")
+	if [ "$HTTPCODE" -ne 200 ]
+	then
+		echo
+		echo "cannot download $Arch $Variant - HTTP Returncode is $HTTPCODE"
+		exit 100
+	fi
 	FILE=$(curl --location "https://bouncer.gentoo.org/fetch/root/all/releases/$Arch/autobuilds/latest-stage3-$FArch-$Variant.txt" | sed '/^#/d' | cut -f1 -d" " )
 	FILEPATH="https://bouncer.gentoo.org/fetch/root/all/releases/$Arch/autobuilds/$FILE"
 
