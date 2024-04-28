@@ -64,7 +64,7 @@ check_executable tar
 # create an empty image
 qemu-img create -f qcow2 "$DISK_NAME" "$DISK_SIZE"
 
-set -x -v -e
+set -e
 
 #
 # 
@@ -153,10 +153,48 @@ else
 	rsync -a --progress /usr/portage/ var/db/repos/gentoo
 fi
 
-# mount pseude-filesystems
+# create runtime config file
+touch 01-config.sh
+
+# handle layman overlays
+case $Variant in
+	musl*) ADD_OVERLAYS_LIST+=" musl" ;;
+esac
+echo "Overlays to be added to image: $ADD_OVERLAYS_LIST"
+echo "ADD_OVERLAYS_LIST=\"$ADD_OVERLAYS_LIST\"" >>01-config.sh
+if [ -n "$ADD_OVERLAYS_LIST" ]
+then
+	# test if layman is installed
+	check_executable layman
+	OVERLAY_STORAGE_DIR=$(sed -nr "/^\[MAIN\]/ { :l /^storage[ ]*:/ { s/.*:[ ]*//; p; q;}; n; b l;}" /etc/layman/layman.cfg)
+	echo "Overlay directory: $OVERLAY_STORAGE_DIR"
+	echo "OVERLAY_STORAGE_DIR=\"$OVERLAY_STORAGE_DIR\"" >>01-config.sh
+	mkdir -p "./$OVERLAY_STORAGE_DIR"
+	for OV in $ADD_OVERLAYS_LIST
+	do
+		if [ ! -d "$OVERLAY_STORAGE_DIR/$OV" ]
+		then
+			echo "Overlay $OV does not exist, add it in disabled state"
+			layman --add "$OV"
+			layman --disable "$OV"
+		fi
+		if [ -d "$OVERLAY_STORAGE_DIR/$OV" ]
+		then
+			echo "Add overlay $OV to image"
+			cp -r "$OVERLAY_STORAGE_DIR/$OV" "./$OVERLAY_STORAGE_DIR/$OV"
+		else
+			exit 101
+		fi
+	done
+fi
+
+# mount pseudo-filesystems
 mount -o bind /dev/ dev/
 mount -o bind /sys/ sys/
 mount -o bind /proc/ proc/
+
+[ -d "$DIR_NFS_SHARES"/distfiles ] || mkdir "$DIR_NFS_SHARES"/distfiles
+[ -d "$DIR_NFS_SHARES"/binpkgs-$Arch-$Variant ] || mkdir -p "$DIR_NFS_SHARES"/binpkgs-$Arch-$Variant
 
 # mount distfiles + binpkgs-filesystems
 mount -o bind "$DIR_NFS_SHARES"/distfiles var/cache/distfiles
