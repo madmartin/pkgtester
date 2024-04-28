@@ -32,7 +32,7 @@ NFS_SERVER="192.168.122.1"
 # Array with lines to add to /etc/fstab, e.g. private overlays
 FSTAB_ADDON_LINES=(
 	"# mount my overlay"
-	"192.168.122.1:/var/lib/layman/md-private /var/db/repos/md-private nfs defaults 0 0"
+	"192.168.122.1:/var/db/repos/my-overlay/ /var/db/repos/my-overlay nfs defaults 0 0"
 )
 
 # @VARIABLE: FSTAB_ADDON_DIRS
@@ -51,6 +51,16 @@ DISK_SIZE=20G
 # which locale should be set in the virtual machine
 VM_LOCALE="de_DE.utf8"
 
+# @VARIABLE: VM_KEYBOARD_KEYMAP
+# @DESCRIPTION:
+# Name of the Keymap that should be set in the virtual machine
+VM_KEYBOARD_KEYMAP="de-latin1-nodeadkeys"
+
+# @VARIABLE: VM_TIMEZONE
+# @DESCRIPTION:
+# Name of the timezone that should be set in the virtual machine
+VM_TIMEZONE="Europe/Berlin"
+
 # @VARIABLE: REPO_SQUASHFS
 # @DESCRIPTION:
 # Wnen set to yes, the portage tree will be put as squashfs image into the disk image
@@ -58,22 +68,39 @@ VM_LOCALE="de_DE.utf8"
 # In all other cases, the portage tree will be copied
 REPO_SQUASHFS="yes"
 
-# @VARIABLE: 
+# @VARIABLE: ADD_OVERLAYS_LIST
 # @DESCRIPTION:
-# 
+# List of overlay names. The content of all overlays listed here will be trans-
+# ferred into the image. The location of the overlay directory is read from
+# /etc/layman/layman.cfg
+# Note: for images that contain "musl" in the name, the "musl" overlay is auto-
+# matically added.
+# Overlays in the list, that are currently not found on the base system, will be
+# automatically added and set to the disabled state
+# (disabled overlays are synced but not recognized by portage)
+ADD_OVERLAYS_LIST=""
+#ADD_OVERLAYS_LIST="vdr-devel"
 
-# @VARIABLE: 
+# @VARIABLE: ADD_SSH_PUBKEYS
 # @DESCRIPTION:
-# 
+# Array of ssh public keys to add to /root/.ssh/authorized_keys
+ADD_SSH_PUBKEYS=(
+	"#comment 1"
+	"ssh-rsa <our ssh key here>"
+	"#comment 2" )
 
-# @VARIABLE: 
+# @VARIABLE:
 # @DESCRIPTION:
-# 
+#
 
-# @VARIABLE: 
+# @VARIABLE:
 # @DESCRIPTION:
-# 
+#
 
-# @VARIABLE: 
+# @VARIABLE:
 # @DESCRIPTION:
-# 
+#
+
+# @VARIABLE:
+# @DESCRIPTION:
+#
