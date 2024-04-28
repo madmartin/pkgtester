@@ -16,10 +16,12 @@ fi
 cd /
 
 # source the config file
-DIR=$(dirname $0); [ -e "$DIR/00-config.sh" ] && source "$DIR/00-config.sh"
+DIR=$(dirname $0)
+[ -e "$DIR/00-config.sh" ] && source "$DIR/00-config.sh"
+[ -e "$DIR/01-config.sh" ] && source "$DIR/01-config.sh"
 
 # determine $Arch and $Variant from filename
-STAGE3=$(ls stage3-*.tar.*)
+STAGE3=$(ls /stage3-*.tar.*)
 Arch=$(echo "$STAGE3" | cut -d"-" -f2)
 Variant=$(echo "$STAGE3" | cut -d"-" -f3- | rev | cut -d"-" -f2- | rev)
 echo "Arch: $Arch - Variant $Variant"
@@ -91,6 +93,22 @@ $PORTDIR_OVERLAY
 
 EOF
 
+
+# add overlay informatino to make.conf
+if [ -n "$ADD_OVERLAYS_LIST" ]
+then
+	echo "PORTDIR_OVERLAY=\"" >>/etc/portage/make.conf
+	for OV in $ADD_OVERLAYS_LIST
+	do
+		if [ -d "$OVERLAY_STORAGE_DIR/$OV" ]
+		then
+			echo "$OVERLAY_STORAGE_DIR/$OV" >>/etc/portage/make.conf
+		fi
+	done
+	echo '$PORTDIR_OVERLAY' >>/etc/portage/make.conf
+	echo '"' >>/etc/portage/make.conf
+fi
+
 # populate fstab
 cat >>/etc/fstab <<EOF
 LABEL=pkgtester / xfs noatime 0 1
@@ -99,6 +117,9 @@ $NFS_SERVER:$DIR_NFS_SHARES/work /root/work nfs defaults 0 0
 $NFS_SERVER:$DIR_NFS_SHARES/distfiles /var/cache/distfiles nfs defaults 0 0
 $NFS_SERVER:$DIR_NFS_SHARES/binpkgs-$Arch-$Variant /var/cache/binpkgs nfs defaults 0 0
 EOF
+
+# create a missing directors
+mkdir -p /var/lib/nfs/sm 2>&1 >/dev/null
 
 # portage tree
 if [ "$REPO_SQUASHFS" = "yes" ]; then
@@ -115,12 +136,20 @@ do
 	mkdir -p "$D"
 done
 
+echo "#######################################"
+echo "# doing an emerge @world update now   #"
+echo "#######################################"
+emerge --ask --verbose --buildpkg=y --autounmask=y --usepkg -DuN @world
+
 # install sys-kernel/gentoo-kernel-bin and others
 PACKAGE_LIST="sys-kernel/gentoo-kernel-bin sys-boot/grub net-fs/nfs-utils"
 if [ "$INIT" = "openrc" ]; then
 	PACKAGE_LIST+=" net-misc/dhcpcd"
 fi
-emerge --ask --verbose --buildpkg=y --usepkg $PACKAGE_LIST
+echo "#######################################"
+echo "# emerging kernel and others now      #"
+echo "#######################################"
+emerge --ask --verbose --buildpkg=y --autounmask=y --usepkg $PACKAGE_LIST
 
 # grub-install --target=i386-pc --boot-directory=./boot/ /dev/nbd0
 grub-install --target=i386-pc /dev/nbd0
@@ -165,9 +194,10 @@ cat >/etc/portage/package.accept_keywords/mykeywords <<EOF
 dev-embedded/esptool ~amd64
 media-tv/oscam ~amd64
 sys-fs/btrfsmaintenance ~amd64
-dev-python/reedsolomon ~amd64
+dev-python/reedsolo ~amd64
 app-admin/passwordsafe ~amd64
 net-im/signal-cli-bin ~amd64
+media-sound/jack ~amd64
 
 media-video/vdr ~amd64
 media-tv/gentoo-vdr-scripts ~amd64
@@ -218,7 +248,8 @@ echo "Setup of VM in chroot environment finished."
 echo "==========================================="
 echo "Whats next? - YOU do:"
 echo "exit from this CHROOT (type \"exit\"),"
-echo "boot virtual machine, then after first login execute"
+echo "boot virtual machine, then login with \"root\" / password \"admin123..\""
+echo "after first login - execute"
 echo "  /40-inside-running-vm-prepare-vm-from-stage3.sh"
 echo
 echo "Note: on the first boot, the VM does not configure the network."
