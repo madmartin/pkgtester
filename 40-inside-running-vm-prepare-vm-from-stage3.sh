@@ -23,7 +23,7 @@ fi
 DIR=$(dirname $0); [ -e "$DIR/00-config.sh" ] && source "$DIR/00-config.sh"
 
 # determine $Arch and $Variant from filename
-STAGE3=$(ls stage3-*.tar.*)
+STAGE3=$(ls /stage3-*.tar.*)
 Arch=$(echo "$STAGE3" | cut -d"-" -f2)
 Variant=$(echo "$STAGE3" | cut -d"-" -f3- | rev | cut -d"-" -f2- | rev)
 echo "Arch: $Arch - Variant $Variant"
@@ -48,16 +48,24 @@ case $INIT in
 		hostnamectl set-hostname "pkgtester-$Arch"
 
 		# configure keyboard layout
-		localectl set-keymap de-latin1-nodeadkeys
+		localectl set-keymap "$VM_KEYBOARD_KEYMAP"
 
 		# configure timezone
-		timedatectl set-timezone Europe/Berlin
+		timedatectl set-timezone "$VM_TIMEZONE"
 
 		# create machine id, VERY important for networking
 		systemd-machine-id-setup
 		;;
 	openrc)
-		echo "FIXME"
+		# configure hostname
+		sed -i -e "s|localhost|pkgtester-$Arch|" /etc/conf.d/hostname
+
+		# configure keyboard layout
+		sed -i -e "s|keymap=\"us\"|keymap=\"$VM_KEYBOARD_KEYMAP\"|" /etc/conf.d/keymaps
+
+		# configure timezone
+		echo "$VM_TIMEZONE" >/etc/timezone
+		emerge --config sys-libs/timezone-data >/dev/null 2>&1
 		;;
 	*)
 		echo "unknonw init system, do nothing"
