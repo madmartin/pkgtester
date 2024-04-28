@@ -18,6 +18,7 @@ prepare_directories() {
 download_variant() {
 	local Arch=$1
 	local Variant=$2
+	local Tmpfile=$(mktemp)
 
 	case $Arch in
 		x86)	FArch=i686;;
@@ -37,9 +38,19 @@ download_variant() {
 		echo "cannot download $Arch $Variant - HTTP Returncode is $HTTPCODE"
 		exit 100
 	fi
-	FILE=$(curl --location "https://bouncer.gentoo.org/fetch/root/all/releases/$Arch/autobuilds/latest-stage3-$FArch-$Variant.txt" | sed '/^#/d' | cut -f1 -d" " )
+	curl --location "https://bouncer.gentoo.org/fetch/root/all/releases/$Arch/autobuilds/latest-stage3-$FArch-$Variant.txt" --output $Tmpfile
+	# check if file is GPG signed
+	local FirstLine=$(head -n1 $Tmpfile)
+	if [ "$FirstLine" = "-----BEGIN PGP SIGNED MESSAGE-----" ]
+	then
+		echo "download done, GPG check:"
+		mv "$Tmpfile" "${Tmpfile}-s"
+		gpg --output "$Tmpfile" --verify "${Tmpfile}-s"
+		rm -f "${Tmpfile}-s"
+	fi
+	FILE=$(cat $Tmpfile | sed '/^#/d' | cut -f1 -d" " )
 	FILEPATH="https://bouncer.gentoo.org/fetch/root/all/releases/$Arch/autobuilds/$FILE"
-
+	rm -f "${Tmpfile}"
 	echo "Download URL: $FILEPATH"
 	pause
 	curl --remote-name --location --continue-at - "$FILEPATH" && echo "Download successful."
